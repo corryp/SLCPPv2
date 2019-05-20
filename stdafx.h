@@ -9,7 +9,11 @@
 
 #include <stdio.h>
 #include <tchar.h>
+#include<cmath>
+#include<vector>
 
+#include "SLCPPlib.h"
+#include "SensorVar.h"
 
 
 // TODO: reference additional headers your program requires here
