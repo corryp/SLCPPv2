@@ -91,7 +91,7 @@ public:
 
 		md_finish = m_knl.md_time;
 
-		cout << mi_get_id() << ": " << md_arv_t << " (q=" << mi_q_len << ",s=" << mi_in_srv << ") -> " << md_start_srv << " (" << md_prc_t << ") -> " << md_finish << endl;
+		//cout << mi_get_id() << ": " << md_arv_t << " (q=" << mi_q_len << ",s=" << mi_in_srv << ") -> " << md_start_srv << " (" << md_prc_t << ") -> " << md_finish << endl;
 
 		end_run;
 	}//m_run
@@ -110,7 +110,7 @@ void g_test_mms() {
 	int n = 1200000;
 	double d_T = 40*3600;
 	for (int i = 0; i < n; ++i) {
-		p_cl = new Client(knl, srv, d_T * rand() / RAND_MAX, (0.95 * m * d_T/n) * rand() / RAND_MAX);
+		p_cl = new Client(knl, srv, d_T * rand() / RAND_MAX, (2 * m * d_T/n) * rand() / RAND_MAX);
 		p_cl->m_run();
 		s_cl.push_back(p_cl);
 	}//i

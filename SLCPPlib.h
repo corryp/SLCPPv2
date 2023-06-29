@@ -74,6 +74,8 @@ private:
 	static int mi_sched_ctr;	//counter of scheduled objects 
 
 	list<SimObj*> ms_yield_to;		//sleepy objects to have highest priority to run next
+
+	void m_run_yield_to_list();
 };//SimKernel
 
 class SimObj {

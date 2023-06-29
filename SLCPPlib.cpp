@@ -34,6 +34,7 @@ void SimKernel::m_simulate(double ad_tmax)
 				break;
 			s_it = ms_sched_q.erase(s_it);
 			p_obj->m_run();
+			m_run_yield_to_list();
 		}//wend
 
 		//evaluate all objects waiting on a condition
@@ -41,19 +42,13 @@ void SimKernel::m_simulate(double ad_tmax)
 		do {
 			b_stop = true;
 
-			while (ms_yield_to.size() > 0) {
-				p_obj = ms_yield_to.front();
-				ms_yield_to.pop_front();
-				p_obj->m_run();
-				b_stop = false;
-			}//if
-
 			s_it = ms_triggered.begin();
 			while (s_it != ms_triggered.end()) {
 				p_obj = *s_it;
 				if (p_obj->mb_wait_condition()) {
 					p_obj->m_clear_watches();
 					p_obj->m_run();
+					m_run_yield_to_list();
 					b_stop = false;
 				}//if
 				s_it = ms_triggered.erase(s_it);
@@ -64,6 +59,7 @@ void SimKernel::m_simulate(double ad_tmax)
 				if (p_obj->mb_wait_condition()) {
 					ms_wait_q.erase(l_it);
 					p_obj->m_run();
+					m_run_yield_to_list();
 					b_stop = false;
 					break;
 				}//if
@@ -75,6 +71,15 @@ void SimKernel::m_simulate(double ad_tmax)
 		md_time = d_t;
 	}//wend
 }//m_simulate
+
+void SimKernel::m_run_yield_to_list()
+{
+	while (ms_yield_to.size() > 0) {
+		SimObj* p_obj = ms_yield_to.front();
+		ms_yield_to.pop_front();
+		p_obj->m_run();
+	}//if
+}
 
 void SimKernel::m_wait_until(SimObj* ap_obj)
 {
