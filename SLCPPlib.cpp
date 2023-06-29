@@ -41,6 +41,13 @@ void SimKernel::m_simulate(double ad_tmax)
 		do {
 			b_stop = true;
 
+			while (ms_yield_to.size() > 0) {
+				p_obj = ms_yield_to.front();
+				ms_yield_to.pop_front();
+				p_obj->m_run();
+				b_stop = false;
+			}//if
+
 			s_it = ms_triggered.begin();
 			while (s_it != ms_triggered.end()) {
 				p_obj = *s_it;
@@ -81,6 +88,12 @@ void SimKernel::m_schedule(SimObj* ap_obj)
 	ms_sched_q.insert(ap_obj);
 }
 
+void SimKernel::m_yield_to(SimObj* ap_obj)
+{
+	if (ap_obj->mi_get_status() == SLEEPY)
+		ms_yield_to.push_back(ap_obj);
+}
+
 
 //SimObj
 
@@ -91,9 +104,12 @@ void SimObj::m_run() {}
 
 void SimObj::m_wakeup()
 {
-	assert(m_status == SLEEPY);
-	m_run();
-}
+	//assert(m_status == SLEEPY);
+	if (m_status != SLEEPY)
+		return;
+
+	m_knl.m_yield_to(this);
+}//m_wakeup
 
 int SimObj::mi_get_id() { return mi_id; }
 SimState SimObj::mi_get_status() { return m_status; }

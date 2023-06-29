@@ -9,8 +9,10 @@
 
 #include <stdio.h>
 #include <tchar.h>
-#include<cmath>
-#include<vector>
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <fstream>
 
 #include "SLCPPlib.h"
 #include "SensorVar.h"

@@ -17,32 +17,46 @@ public:
 
 class Server : public SimObj {
 public:
-	Server(SimKernel& a_knl) : SimObj(a_knl), m_busy(a_knl) {}
+	Server(SimKernel& a_knl, const int ai_capacity) : SimObj(a_knl), m_busy_count(a_knl), mi_capacity(ai_capacity) {}
+
+	int mi_capacity;
 
 	list<SimObj*> q;
 	bool mb_busy;
-	SensorVar<bool> m_busy;
+	SensorVar<int> m_busy_count;
 
 	SimObj* p_client;
 
 	void m_run() {
 		start_run;
 
-		m_busy = false;
+		m_busy_count = 0;
 		while (true) {
-			if (q.size() == 0) {
-				wait_until([this]() {return this->q.size() > 0;});
+			while (q.size() == 0) {
+				//wait_until([this]() {return this->q.size() > 0;});
+				sleep;
 			}//if
 
 			p_client = q.front();
 			q.pop_front();
-			m_busy = true;
+			m_busy_count = m_busy_count.get() + 1;
 			p_client->m_wakeup();
-			sensor_wait([this]() {return !this->m_busy.get();}, m_busy);
+			if (this->m_busy_count.get() >= mi_capacity) {
+				sensor_wait([this]() {return this->m_busy_count.get() < mi_capacity; }, m_busy_count);
+			}//if
 		}//forever
 
 		end_run;
 	}//m_run
+
+	void m_request(SimObj* a_client) {
+		q.push_back(a_client);
+		m_wakeup();
+	}//m_request
+
+	void m_release() {
+		m_busy_count = m_busy_count.get() - 1;
+	}//m_release
 };//Server
 
 
@@ -52,7 +66,7 @@ public:
 	double md_arv_t;
 	double md_prc_t;
 
-	int mi_q_len;
+	int mi_q_len, mi_in_srv;
 	double md_start_srv;
 	double md_finish;
 
@@ -65,36 +79,43 @@ public:
 		start_run;
 
 		delay(md_arv_t);
-		m_srv.q.push_back(this);
+		m_srv.m_request(this);
+
 		mi_q_len = m_srv.q.size();
+		mi_in_srv = m_srv.m_busy_count.get();
 		sleep;
 
 		md_start_srv = m_knl.md_time;
 		delay(md_prc_t);
-		m_srv.m_busy = false;
+		m_srv.m_release();
 
 		md_finish = m_knl.md_time;
 
-		cout << mi_get_id() << ": " << md_arv_t << " (q=" << mi_q_len << ") -> " << md_start_srv << " (" << md_prc_t << ") -> " << md_finish << endl;
+		cout << mi_get_id() << ": " << md_arv_t << " (q=" << mi_q_len << ",s=" << mi_in_srv << ") -> " << md_start_srv << " (" << md_prc_t << ") -> " << md_finish << endl;
 
 		end_run;
 	}//m_run
 };//Client
 
-void g_test_mm1() {
+void g_test_mms() {
 	SimKernel knl;
-	Server srv(knl);
+
+	int m = 10000;
+	Server srv(knl, m);
 	srv.m_run();
 
 	vector<Client*> s_cl;
 	Client *p_cl;
-	for (int i = 0; i < 100; ++i) {
-		p_cl = new Client(knl, srv, 100.0 * rand() / RAND_MAX, 1.5 * rand() / RAND_MAX);
+	
+	int n = 1200000;
+	double d_T = 40*3600;
+	for (int i = 0; i < n; ++i) {
+		p_cl = new Client(knl, srv, d_T * rand() / RAND_MAX, (0.95 * m * d_T/n) * rand() / RAND_MAX);
 		p_cl->m_run();
 		s_cl.push_back(p_cl);
 	}//i
 
-	knl.m_simulate(1000);
+	knl.m_simulate(2*d_T);
 
 	p_cl = p_cl;
 }//g_test_mm1
@@ -102,7 +123,16 @@ void g_test_mm1() {
 int main()
 {
 	int i;
-	g_test_mm1();
+
+	ofstream f("out.txt");
+
+	streambuf* oldCoutBuffer = std::cout.rdbuf();
+	cout.rdbuf(f.rdbuf());
+
+	g_test_mms();
+
+	cout.rdbuf(oldCoutBuffer);
+	cout << "done\n";
 	cin >> i;
 
 	return 0;

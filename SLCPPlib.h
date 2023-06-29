@@ -69,8 +69,11 @@ public:
 
 	virtual void m_wait_until(SimObj* ap_obj);
 	virtual void m_schedule(SimObj* ap_obj);
+	virtual void m_yield_to(SimObj* ap_obj);	//once current process stops running, ap_obj will run next (only if it's sleepy)
 private:
 	static int mi_sched_ctr;	//counter of scheduled objects 
+
+	list<SimObj*> ms_yield_to;		//sleepy objects to have highest priority to run next
 };//SimKernel
 
 class SimObj {
